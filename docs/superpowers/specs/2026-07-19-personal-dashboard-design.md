@@ -131,7 +131,7 @@ Design language: minimal, monochrome + one accent, generous whitespace, no XP/po
 
 - Unit: lock-state computation, markdown importer, zod schemas (vitest).
 - API: route handler tests for /api/updates and /api/intents (auth, validation, delta application).
-- E2E smoke: create tree → POST fake session update → node advances → intent round-trip (playwright, one spec).
+- E2E smoke: create tree → POST fake session update → node advances → intent round-trip, driven by the real hook scripts against a running dev server (curl-based; playwright optional later).
 - Manual: install skill+hooks in one real project (xnock), run one real session, verify tree updates.
 
 ## 9. Build order (for the implementation plan)
