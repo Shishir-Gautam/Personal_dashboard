@@ -48,9 +48,8 @@ const CredentialSchema = new Schema({
   transports: [String],
 }, { timestamps: true })
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const m = <T>(name: string, schema: Schema, coll?: string): Model<any> =>
-  (models[name] as Model<any>) || model(name, schema, coll)
+const m = <T = unknown>(name: string, schema: Schema, coll?: string): Model<T> =>
+  (models[name] as Model<T>) || model<T>(name, schema, coll)
 
 export const Tree = m('Tree', TreeSchema)
 export const TreeNode = m('TreeNode', NodeSchema, 'nodes')
