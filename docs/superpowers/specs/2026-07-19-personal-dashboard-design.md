@@ -20,7 +20,8 @@ Life and course trees use the same node template but are updated manually (v1).
 - Zero-friction automatic progress capture from Claude Code sessions.
 - Two-way loop: dashboard → next session via intent queue.
 - Every design choice grounded in cited productivity research (see §7).
-- Minimal: one Next.js app, one Postgres database, one Claude Code skill, two hooks.
+- Minimal: one Next.js app, one MongoDB database, one Claude Code skill, two hooks.
+- Clone-and-run for others: public repo, `.env.example`, documented setup.
 
 **Non-goals (v1)**
 - Multi-user, teams, sharing.
@@ -33,7 +34,7 @@ Life and course trees use the same node template but are updated manually (v1).
 
 ```
 ┌─ Mac ────────────────────────────┐      ┌─ Vercel ─────────────────────┐
-│ Claude Code session in ~/xnock   │      │ Next.js App Router           │
+│ Claude Code session in ~/project   │      │ Next.js App Router           │
 │                                  │      │                              │
 │ SessionStart hook (command) ─────┼──────┼→ /api/intents?project=xnock  │
 │   curls intents, stdout becomes  │      │                              │
@@ -42,18 +43,19 @@ Life and course trees use the same node template but are updated manually (v1).
 │ dashboard-sync skill             │      │ UI pages (React Flow tree)   │ │
 │   (keeps .claude/dashboard-      │      │        │                     │ │
 │    summary.json current during   │      │        ▼                     │ │
-│    the session)                  │      │  Neon Postgres (drizzle)     │ │
+│    the session)                  │      │  MongoDB Atlas (mongoose)    │ │
 │ SessionEnd hook (command) ───────┼──────┘                              │ │
 │   curls summary file, bearer ────┼─────────────────────────────────────┘ │
 └──────────────────────────────────┘                                       │
-                                     User browser ── password cookie ──────┘
+                User browser ── WebAuthn passkey, 30-min sliding cookie ───┘
 ```
 
 - **App:** Next.js (App Router, TypeScript, Tailwind), deployed on Vercel.
-- **DB:** Neon Postgres (Vercel marketplace, free tier) via drizzle ORM.
-- **Auth:** two layers, both trivial.
-  - API writes/pulls: static bearer token in `DASHBOARD_TOKEN` env var, checked in route handlers.
-  - UI: single password → signed httpOnly cookie via middleware. No NextAuth.
+- **DB:** MongoDB Atlas via mongoose (`MONGODB_URI` env var; owner reuses the xnock cluster).
+- **Auth:** two layers.
+  - API writes/pulls (hooks): static bearer token in `DASHBOARD_TOKEN` env var, checked in route handlers.
+  - UI: **WebAuthn passkey (platform biometric — Touch ID / Face ID / Windows Hello)** via @simplewebauthn. First visit with zero registered passkeys → register; afterwards login requires a biometric assertion. Session = signed httpOnly cookie with a **30-minute sliding inactivity window**: any authenticated request refreshes it; after 30 idle minutes the next request redirects to biometric login.
+- **Self-hostable:** repo is public-template friendly — `.env` gitignored, `.env.example` documents `MONGODB_URI`, `DASHBOARD_TOKEN`, `SESSION_SECRET`, `RP_ID`/origin; README covers clone → Atlas free tier → Vercel deploy → register your passkey → install skill+hooks.
 - **Tree rendering:** React Flow (xyflow) + dagre auto-layout. Custom node component.
 - **Local side:** one reusable `dashboard-sync` skill + two `command` hook entries in each tracked project's `.claude/settings.json` (SessionStart intent pull, SessionEnd summary push script).
 
@@ -134,8 +136,8 @@ Design language: minimal, monochrome + one accent, generous whitespace, no XP/po
 
 ## 9. Build order (for the implementation plan)
 
-1. Scaffold Next.js + drizzle + Neon; schema + migrations.
-2. API routes (updates, intents) + bearer auth; seed script with sample tree.
+1. Scaffold Next.js + mongoose + MongoDB; schemas.
+2. API routes (updates, intents) + bearer auth; WebAuthn register/login + 30-min sliding session; seed script with sample tree.
 3. Tree view (React Flow + dagre) + node drawer.
 4. Home page four-group layout.
 5. Tree editor + markdown importer.
