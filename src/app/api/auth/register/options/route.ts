@@ -14,6 +14,12 @@ export async function POST() {
     authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'preferred' },
   })
   const res = NextResponse.json(options)
-  res.cookies.set('pd_challenge', options.challenge, { httpOnly: true, maxAge: 300, path: '/' })
+  res.cookies.set('pd_challenge', options.challenge, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 300,
+    path: '/',
+  })
   return res
 }

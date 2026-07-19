@@ -46,6 +46,10 @@ const CredentialSchema = new Schema({
   publicKey: { type: String, required: true }, // base64url-encoded
   counter: { type: Number, default: 0 },
   transports: [String],
+  // Constant singleton key: this app supports exactly one passkey. The unique
+  // index turns concurrent registrations into a DB-enforced race instead of a
+  // TOCTOU-prone countDocuments() check.
+  owner: { type: String, default: 'owner', unique: true },
 }, { timestamps: true })
 
 const m = <T = unknown>(name: string, schema: Schema, coll?: string): Model<T> =>

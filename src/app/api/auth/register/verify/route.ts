@@ -19,12 +19,21 @@ export async function POST(req: NextRequest) {
   })
   if (!v.verified || !v.registrationInfo) return NextResponse.json({ error: 'not verified' }, { status: 400 })
   const { credential } = v.registrationInfo
-  await Credential.create({
-    credId: credential.id,
-    publicKey: Buffer.from(credential.publicKey).toString('base64url'),
-    counter: credential.counter,
-    transports: credential.transports ?? [],
-  })
+  try {
+    await Credential.create({
+      credId: credential.id,
+      publicKey: Buffer.from(credential.publicKey).toString('base64url'),
+      counter: credential.counter,
+      transports: credential.transports ?? [],
+    })
+  } catch (err: unknown) {
+    // Unique index on `owner` enforces the single-passkey invariant at the DB
+    // layer: a concurrent registration that raced past the countDocuments()
+    // check above still can't create a second credential.
+    if (typeof err === 'object' && err !== null && 'code' in err && (err as { code?: number }).code === 11000)
+      return NextResponse.json({ error: 'already registered' }, { status: 403 })
+    throw err
+  }
   const res = NextResponse.json({ ok: true })
   res.cookies.set(SESSION_COOKIE, await signSession(), sessionCookieOptions)
   res.cookies.delete('pd_challenge')

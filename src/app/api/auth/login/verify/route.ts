@@ -25,8 +25,7 @@ export async function POST(req: NextRequest) {
     },
   })
   if (!v.verified) return NextResponse.json({ error: 'not verified' }, { status: 401 })
-  cred.counter = v.authenticationInfo.newCounter
-  await cred.save()
+  await Credential.findOneAndUpdate({ credId: body.id }, { counter: v.authenticationInfo.newCounter })
   const res = NextResponse.json({ ok: true })
   res.cookies.set(SESSION_COOKIE, await signSession(), sessionCookieOptions)
   res.cookies.delete('pd_challenge')
