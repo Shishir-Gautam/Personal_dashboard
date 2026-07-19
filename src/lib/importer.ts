@@ -3,7 +3,7 @@ import { computeStatuses } from './statuses'
 
 export function parseOutline(md: string): { title: string; depth: number }[] {
   return md.split('\n')
-    .map(l => { const m = l.match(/^(\s*)-\s+(.+)$/); return m ? { depth: Math.floor(m[1].length / 2), title: m[2].trim() } : null })
+    .map(l => { const m = l.match(/^(\s*)-\s+(.+)$/); return m ? { depth: Math.floor(m[1].replace(/\t/g, '  ').length / 2), title: m[2].trim() } : null })
     .filter((x): x is { title: string; depth: number } => x !== null)
 }
 

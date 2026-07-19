@@ -9,6 +9,12 @@ describe('parseOutline', () => {
       { title: 'A', depth: 0 }, { title: 'B', depth: 1 }, { title: 'C', depth: 2 }, { title: 'D', depth: 0 },
     ])
   })
+
+  it('handles tab indents', () => {
+    expect(parseOutline('- A\n\t- B')).toEqual([
+      { title: 'A', depth: 0 }, { title: 'B', depth: 1 },
+    ])
+  })
 })
 
 describe('importTree', () => {
