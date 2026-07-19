@@ -9,15 +9,22 @@ export async function GET(req: NextRequest) {
   const slug = req.nextUrl.searchParams.get('project')
   const tree = await Tree.findOne({ slug })
   if (!tree) return NextResponse.json({ error: `unknown tree: ${slug}` }, { status: 404 })
-  const pending = await Intent.find({ treeId: tree._id, status: 'pending' }).populate('nodeId', 'title')
-  const intents = pending.map(i => ({
-    id: String(i._id),
-    node: i.nodeId ? (i.nodeId as unknown as { title: string }).title : null,
-    directive: i.directive,
-  }))
-  await Intent.updateMany(
-    { _id: { $in: pending.map(i => i._id) } },
-    { status: 'delivered', deliveredAt: new Date() },
+  const pending = await Intent.find({ treeId: tree._id, status: 'pending' })
+  const claimed = await Promise.all(
+    pending.map(i =>
+      Intent.findOneAndUpdate(
+        { _id: i._id, status: 'pending' },
+        { status: 'delivered', deliveredAt: new Date() },
+        { returnDocument: 'after' },
+      ).populate('nodeId', 'title'),
+    ),
   )
+  const intents = claimed
+    .filter((i): i is NonNullable<typeof i> => i !== null)
+    .map(i => ({
+      id: String(i._id),
+      node: i.nodeId ? (i.nodeId as unknown as { title: string }).title : null,
+      directive: i.directive,
+    }))
   return NextResponse.json({ intents })
 }

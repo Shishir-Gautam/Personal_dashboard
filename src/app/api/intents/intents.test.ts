@@ -29,4 +29,13 @@ describe('GET /api/intents', () => {
     const again = await (await GET(req('http://x/api/intents?project=xnock'))).json()
     expect(again.intents).toHaveLength(0)
   })
+  it('delivers each pending intent exactly once under concurrent GETs', async () => {
+    const [res1, res2] = await Promise.all([
+      GET(req('http://x/api/intents?project=xnock')),
+      GET(req('http://x/api/intents?project=xnock')),
+    ])
+    const [body1, body2] = await Promise.all([res1.json(), res2.json()])
+    const total = body1.intents.length + body2.intents.length
+    expect(total).toBe(1)
+  })
 })
