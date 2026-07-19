@@ -3,7 +3,10 @@ import { SignJWT, jwtVerify } from 'jose'
 export const SESSION_COOKIE = 'pd_session'
 export const SESSION_TTL_S = 30 * 60 // 30-minute sliding inactivity window
 
-const secret = () => new TextEncoder().encode(process.env.SESSION_SECRET!)
+const secret = () => {
+  if (!process.env.SESSION_SECRET) throw new Error('SESSION_SECRET is not set')
+  return new TextEncoder().encode(process.env.SESSION_SECRET)
+}
 
 export async function signSession(): Promise<string> {
   return new SignJWT({ u: 'owner' })
@@ -14,7 +17,7 @@ export async function signSession(): Promise<string> {
 }
 
 export async function verifySession(token: string): Promise<boolean> {
-  try { await jwtVerify(token, secret()); return true } catch { return false }
+  try { await jwtVerify(token, secret(), { algorithms: ['HS256'] }); return true } catch { return false }
 }
 
 export const sessionCookieOptions = {
