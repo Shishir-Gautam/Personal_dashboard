@@ -3,9 +3,10 @@
 set -u
 CONFIG=".claude/dashboard.json"
 [ -f "$CONFIG" ] || exit 0
-URL=$(jq -r .url "$CONFIG")
-TREE=$(jq -r .tree "$CONFIG")
-TOKEN=$(jq -r .token "$CONFIG")
+URL=$(jq -r .url "$CONFIG" 2>/dev/null)
+TREE=$(jq -r .tree "$CONFIG" 2>/dev/null)
+TOKEN=$(jq -r .token "$CONFIG" 2>/dev/null)
+[ -n "$URL" ] && [ "$URL" != "null" ] && [ -n "$TREE" ] && [ "$TREE" != "null" ] && [ -n "$TOKEN" ] && [ "$TOKEN" != "null" ] || exit 0
 OUT=$(curl -sf --max-time 10 "$URL/api/intents?project=$TREE" -H "Authorization: Bearer $TOKEN") || exit 0
 COUNT=$(printf '%s' "$OUT" | jq '.intents | length' 2>/dev/null) || exit 0
 if [ "$COUNT" -gt 0 ]; then
