@@ -1,4 +1,4 @@
-import { verifyAuthenticationResponse, type AuthenticationResponseJSON } from '@simplewebauthn/server'
+import { verifyAuthenticationResponse, type AuthenticationResponseJSON, type AuthenticatorTransportFuture } from '@simplewebauthn/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { Credential } from '@/lib/models'
@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
         id: cred.credId,
         publicKey: new Uint8Array(Buffer.from(cred.publicKey, 'base64url')),
         counter: cred.counter,
-        transports: cred.transports,
+        transports: cred.transports as AuthenticatorTransportFuture[],
       },
     })
   } catch {

@@ -46,7 +46,7 @@ describe('POST /api/reflections', () => {
     // Assert doc exists with weekStart = mondayOf()
     const doc = await Reflection.findOne({ weekStart: mondayOf() })
     expect(doc).toBeDefined()
-    expect(doc.body).toBe('My reflection')
+    expect(doc!.body).toBe('My reflection')
   })
 
   it('updates reflection same week without duplicating', async () => {
@@ -69,6 +69,6 @@ describe('POST /api/reflections', () => {
     const count = await Reflection.countDocuments({ weekStart: mondayOf() })
     expect(count).toBe(1)
     const doc = await Reflection.findOne({ weekStart: mondayOf() })
-    expect(doc.body).toBe('Updated reflection')
+    expect(doc!.body).toBe('Updated reflection')
   })
 })

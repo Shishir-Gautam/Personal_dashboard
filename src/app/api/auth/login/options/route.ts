@@ -1,4 +1,4 @@
-import { generateAuthenticationOptions } from '@simplewebauthn/server'
+import { generateAuthenticationOptions, type AuthenticatorTransportFuture } from '@simplewebauthn/server'
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { Credential } from '@/lib/models'
@@ -12,7 +12,7 @@ export async function POST() {
   const options = await generateAuthenticationOptions({
     rpID,
     userVerification: 'required',
-    allowCredentials: creds.map(c => ({ id: c.credId, transports: c.transports })),
+    allowCredentials: creds.map(c => ({ id: c.credId, transports: c.transports as AuthenticatorTransportFuture[] })),
   })
   const res = NextResponse.json(options)
   res.cookies.set('pd_challenge', options.challenge, {

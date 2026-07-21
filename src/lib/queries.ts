@@ -10,7 +10,7 @@ export async function getTreeData(slug: string) {
   const updatesByNode: Record<string, { summary: string; at: string }[]> = {}
   for (const u of updates) {
     const k = String(u.nodeId ?? '')
-    ;(updatesByNode[k] ??= []).push({ summary: u.summary, at: (u as { createdAt: Date }).createdAt.toISOString() })
+    ;(updatesByNode[k] ??= []).push({ summary: u.summary, at: u.createdAt.toISOString() })
   }
   return {
     tree: { slug: tree.slug, title: tree.title, kind: tree.kind, proposed: (tree.proposed ?? []).map(p => ({ title: p.title, why: p.why ?? '' })) },
@@ -46,7 +46,7 @@ export async function getHomeData() {
   return {
     resume: resume ? card(resume) : null,
     next: next ? card(next) : null,
-    weekMoved: weekUpdates.map(u => ({ tree: byId[String(u.treeId)]?.title ?? '', summary: u.summary, at: (u as { createdAt: Date }).createdAt.toISOString() })),
+    weekMoved: weekUpdates.map(u => ({ tree: byId[String(u.treeId)]?.title ?? '', summary: u.summary, at: u.createdAt.toISOString() })),
     alert: overdue ? `Review due: ${overdue.title}` : pendingIntent ? `Intent waiting: ${pendingIntent.directive}` : null,
     trees: trees.map(t => ({ slug: t.slug, title: t.title, kind: t.kind })),
   }
@@ -60,7 +60,7 @@ export async function getWeekData() {
   const byId = Object.fromEntries(trees.map(t => [String(t._id), t.title]))
   const grouped: Record<string, { summary: string; at: string }[]> = {}
   for (const u of updates)
-    (grouped[byId[String(u.treeId)] ?? '?'] ??= []).push({ summary: u.summary, at: (u as { createdAt: Date }).createdAt.toISOString() })
+    (grouped[byId[String(u.treeId)] ?? '?'] ??= []).push({ summary: u.summary, at: u.createdAt.toISOString() })
   const reflection = await Reflection.findOne({ weekStart }).lean()
   return {
     weekStart: weekStart.toISOString(),
