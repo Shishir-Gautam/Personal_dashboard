@@ -9,15 +9,24 @@ export default function NewTree() {
   const [kind, setKind] = useState<'project' | 'life' | 'course'>('project')
   const [outline, setOutline] = useState('- First milestone\n  - Depends on first\n- Independent branch')
   const [err, setErr] = useState('')
+  const [busy, setBusy] = useState(false)
 
   async function create() {
+    if (busy) return
     setErr('')
-    const res = await fetch('/api/trees', {
-      method: 'POST', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ title, slug, kind, outline }),
-    })
-    if (!res.ok) { setErr((await res.json()).error ?? 'failed'); return }
-    router.push(`/t/${slug}`)
+    setBusy(true)
+    try {
+      const res = await fetch('/api/trees', {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ title, slug, kind, outline }),
+      })
+      if (!res.ok) { setErr((await res.json()).error ?? 'failed'); return }
+      router.push(`/t/${slug}`)
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : 'request failed')
+    } finally {
+      setBusy(false)
+    }
   }
 
   return (
@@ -31,7 +40,7 @@ export default function NewTree() {
       </select>
       <p className="text-xs text-neutral-500">Markdown outline. 2-space indent = needs the node above it. A done &quot;Setup&quot; root is added for you.</p>
       <textarea value={outline} onChange={e => setOutline(e.target.value)} rows={10} className="w-full rounded border p-2 font-mono text-sm dark:bg-neutral-800" />
-      <button onClick={create} className="rounded border px-4 py-2">Create</button>
+      <button onClick={create} disabled={busy} className="rounded border px-4 py-2">Create</button>
       {err && <p className="text-sm text-red-600">{err}</p>}
     </main>
   )
