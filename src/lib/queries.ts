@@ -1,5 +1,5 @@
 import { db } from './db'
-import { Tree, TreeNode, Update } from './models'
+import { Tree, TreeNode, Update, Intent } from './models'
 
 export async function getTreeData(slug: string) {
   await db()
@@ -19,5 +19,35 @@ export async function getTreeData(slug: string) {
       nextAction: x.nextAction, reviewDue: x.reviewDue?.toISOString() ?? null, prereqs: (x.prereqs ?? []).map(String),
     })),
     updatesByNode,
+  }
+}
+
+export function mondayOf(d = new Date()) {
+  const x = new Date(d)
+  const day = (x.getDay() + 6) % 7
+  x.setDate(x.getDate() - day)
+  x.setHours(0, 0, 0, 0)
+  return x
+}
+
+export async function getHomeData() {
+  await db()
+  const trees = await Tree.find().sort('-updatedAt').lean()
+  const byId = Object.fromEntries(trees.map(t => [String(t._id), t]))
+  const card = (n: { _id: unknown; title: string; treeId: unknown; progress: number; nextAction: string }) => ({
+    id: String(n._id), title: n.title, tree: byId[String(n.treeId)]?.title ?? '', treeSlug: byId[String(n.treeId)]?.slug ?? '',
+    progress: n.progress, nextAction: n.nextAction,
+  })
+  const resume = await TreeNode.findOne({ status: 'in_progress' }).sort('-updatedAt').lean()
+  const next = await TreeNode.findOne({ status: 'available' }).sort('-updatedAt').lean()
+  const weekUpdates = await Update.find({ createdAt: { $gte: mondayOf() } }).sort('-createdAt').limit(5).lean()
+  const pendingIntent = await Intent.findOne({ status: 'pending' }).sort('createdAt').lean()
+  const overdue = await TreeNode.findOne({ reviewDue: { $lte: new Date() }, status: { $ne: 'done' } }).lean()
+  return {
+    resume: resume ? card(resume) : null,
+    next: next ? card(next) : null,
+    weekMoved: weekUpdates.map(u => ({ tree: byId[String(u.treeId)]?.title ?? '', summary: u.summary, at: (u as { createdAt: Date }).createdAt.toISOString() })),
+    alert: overdue ? `Review due: ${overdue.title}` : pendingIntent ? `Intent waiting: ${pendingIntent.directive}` : null,
+    trees: trees.map(t => ({ slug: t.slug, title: t.title, kind: t.kind })),
   }
 }
