@@ -15,7 +15,7 @@ sessions, guarded by your fingerprint. Built on evidence from motivation science
 ## Self-host (10 minutes)
 1. Fork/clone. `npm install`.
 2. MongoDB Atlas free tier → connection string.
-3. `cp .env.example .env`, fill: `MONGODB_URI`, `DASHBOARD_TOKEN` + `SESSION_SECRET`
+3. `cp .env.example .env`, fill: `MONGODB_URI`, `MONGODB_DB`, `DASHBOARD_TOKEN` + `SESSION_SECRET`
    (`openssl rand -hex 32` each), `RP_ID=localhost`, `ORIGIN=http://localhost:3000`.
 4. `npm run seed` (optional sample tree), `npm run dev`, open localhost:3000,
    **Register this device** → passkey created. You are the only user; to reset,
