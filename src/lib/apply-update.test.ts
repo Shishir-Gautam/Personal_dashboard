@@ -41,4 +41,15 @@ describe('applyUpdate', () => {
     await expect(applyUpdate({ tree: 'nope', updates: [] })).rejects.toThrow('unknown tree')
     await expect(applyUpdate({ updates: 'x' })).rejects.toThrow()
   })
+  it('ignores a malformed id in intentsDone instead of throwing after deltas are saved (no double-apply on retry)', async () => {
+    const r = await applyUpdate({
+      tree: 'xnock',
+      updates: [{ node: 'core engine', delta: 10, note: 'progress' }],
+      intentsDone: ['not-an-id'],
+    })
+    expect(r.applied).toEqual(['Core engine'])
+    const a = await TreeNode.findById(aId)
+    expect(a!.progress).toBe(60)
+    expect(await Update.countDocuments()).toBe(1)
+  })
 })

@@ -34,7 +34,8 @@ export async function applyUpdate(payload: unknown) {
   }
   for (const pr of p.proposed) tree.proposed.push({ title: pr.title, why: pr.why ?? '' })
   await tree.save()
-  if (p.intentsDone.length) await Intent.updateMany({ _id: { $in: p.intentsDone } }, { status: 'done' })
+  const intentIds = p.intentsDone.filter(id => /^[0-9a-f]{24}$/i.test(id))
+  if (intentIds.length) await Intent.updateMany({ _id: { $in: intentIds } }, { status: 'done' })
 
   const nodes = await TreeNode.find({ treeId: tree._id })
   const st = computeStatuses(nodes.map(x => ({ id: String(x._id), status: x.status, progress: x.progress, prereqs: x.prereqs.map(String) })))

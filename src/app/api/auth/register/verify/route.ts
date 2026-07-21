@@ -1,8 +1,9 @@
-import { verifyRegistrationResponse } from '@simplewebauthn/server'
+import { verifyRegistrationResponse, type RegistrationResponseJSON } from '@simplewebauthn/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { Credential } from '@/lib/models'
 import { signSession, SESSION_COOKIE, sessionCookieOptions } from '@/lib/session'
+import { webauthnEnv } from '@/lib/webauthn-env'
 
 export async function POST(req: NextRequest) {
   await db()
@@ -10,13 +11,25 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'already registered' }, { status: 403 })
   const expectedChallenge = req.cookies.get('pd_challenge')?.value
   if (!expectedChallenge) return NextResponse.json({ error: 'no challenge' }, { status: 400 })
-  const v = await verifyRegistrationResponse({
-    response: await req.json(),
-    expectedChallenge,
-    expectedOrigin: process.env.ORIGIN!,
-    expectedRPID: process.env.RP_ID!,
-    requireUserVerification: true,
-  })
+  let body: RegistrationResponseJSON
+  try {
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ error: 'bad payload' }, { status: 400 })
+  }
+  const { rpID, origin } = webauthnEnv()
+  let v
+  try {
+    v = await verifyRegistrationResponse({
+      response: body,
+      expectedChallenge,
+      expectedOrigin: origin,
+      expectedRPID: rpID,
+      requireUserVerification: true,
+    })
+  } catch {
+    return NextResponse.json({ error: 'not verified' }, { status: 400 })
+  }
   if (!v.verified || !v.registrationInfo) return NextResponse.json({ error: 'not verified' }, { status: 400 })
   const { credential } = v.registrationInfo
   try {

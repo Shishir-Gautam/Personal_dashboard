@@ -46,6 +46,24 @@ describe('webauthn registration verify', () => {
     const res = await regVerify(req)
     expect(res.status).toBe(403)
   })
+  it('400 on malformed JSON body (challenge cookie set)', async () => {
+    await db()
+    const req = new NextRequest('http://localhost:3000/api/auth/register/verify', {
+      method: 'POST',
+      body: '{not valid json',
+      headers: { 'content-type': 'application/json', cookie: 'pd_challenge=x' },
+    })
+    const res = await regVerify(req)
+    expect(res.status).toBe(400)
+    expect((await res.json()).error).toBe('bad payload')
+  })
+  it('400 (not 500) when challenge cookie is set but the body is well-formed garbage', async () => {
+    await db()
+    const req = jsonReq('http://localhost:3000/api/auth/register/verify', { id: 'x', response: {} }, 'pd_challenge=x')
+    const res = await regVerify(req)
+    expect(res.status).toBe(400)
+    expect(res.status).toBeLessThan(500)
+  })
 })
 
 describe('webauthn login options', () => {
@@ -77,6 +95,25 @@ describe('webauthn login verify', () => {
     const req = jsonReq('http://localhost:3000/api/auth/login/verify', { id: 'unknown' }, 'pd_challenge=x')
     const res = await loginVerify(req)
     expect(res.status).toBe(404)
+  })
+  it('400 on malformed JSON body (challenge cookie set)', async () => {
+    await db()
+    const req = new NextRequest('http://localhost:3000/api/auth/login/verify', {
+      method: 'POST',
+      body: '{not valid json',
+      headers: { 'content-type': 'application/json', cookie: 'pd_challenge=x' },
+    })
+    const res = await loginVerify(req)
+    expect(res.status).toBe(400)
+    expect((await res.json()).error).toBe('bad payload')
+  })
+  it('garbage body {"id":"x"} variants stay 4xx not 5xx (challenge cookie + one credential seeded)', async () => {
+    await db()
+    await Credential.create({ credId: 'x', publicKey: 'x', counter: 0 })
+    const req = jsonReq('http://localhost:3000/api/auth/login/verify', { id: 'x' }, 'pd_challenge=x')
+    const res = await loginVerify(req)
+    expect(res.status).toBeLessThan(500)
+    expect([400, 404]).toContain(res.status)
   })
 })
 
