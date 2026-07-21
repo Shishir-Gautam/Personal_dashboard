@@ -1,5 +1,5 @@
 import { db } from './db'
-import { Tree, TreeNode, Update, Intent } from './models'
+import { Tree, TreeNode, Update, Intent, Reflection } from './models'
 
 export async function getTreeData(slug: string) {
   await db()
@@ -49,5 +49,22 @@ export async function getHomeData() {
     weekMoved: weekUpdates.map(u => ({ tree: byId[String(u.treeId)]?.title ?? '', summary: u.summary, at: (u as { createdAt: Date }).createdAt.toISOString() })),
     alert: overdue ? `Review due: ${overdue.title}` : pendingIntent ? `Intent waiting: ${pendingIntent.directive}` : null,
     trees: trees.map(t => ({ slug: t.slug, title: t.title, kind: t.kind })),
+  }
+}
+
+export async function getWeekData() {
+  await db()
+  const weekStart = mondayOf()
+  const updates = await Update.find({ createdAt: { $gte: weekStart } }).sort('-createdAt').lean()
+  const trees = await Tree.find().lean()
+  const byId = Object.fromEntries(trees.map(t => [String(t._id), t.title]))
+  const grouped: Record<string, { summary: string; at: string }[]> = {}
+  for (const u of updates)
+    (grouped[byId[String(u.treeId)] ?? '?'] ??= []).push({ summary: u.summary, at: (u as { createdAt: Date }).createdAt.toISOString() })
+  const reflection = await Reflection.findOne({ weekStart }).lean()
+  return {
+    weekStart: weekStart.toISOString(),
+    byTree: Object.entries(grouped).map(([tree, items]) => ({ tree, items })),
+    reflection: reflection?.body ?? null,
   }
 }
