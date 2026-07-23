@@ -1,0 +1,10 @@
+{
+  "slug": "my-project",
+  "title": "My Project",
+  "kind": "project",
+  "nodes": [
+    { "id": "setup", "title": "Setup", "why": "Groundwork done by creating this tree.", "status": "done" },
+    { "id": "core", "title": "Core Feature", "why": "Why this matters in one line.", "status": "in_progress", "progress": 40, "prereqs": ["setup"], "nextAction": "When I next open the project, I will…", "note": "Shows up in the node's history drawer." },
+    { "id": "polish", "title": "Polish", "why": "Locked until Core Feature is done.", "prereqs": ["core"] }
+  ]
+}
