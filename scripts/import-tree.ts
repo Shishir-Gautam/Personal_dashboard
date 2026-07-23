@@ -42,7 +42,7 @@ async function main() {
       title: n.title,
       why: n.why ?? '',
       status: n.status ?? 'locked',
-      progress: n.progress ?? (n.status === 'done' ? 100 : 0),
+      progress: typeof n.progress === 'number' ? Math.max(0, Math.min(100, n.progress)) : n.status === 'done' ? 100 : 0,
       nextAction: n.nextAction ?? '',
       prereqs: [],
     })
